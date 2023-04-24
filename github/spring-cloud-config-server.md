@@ -28,7 +28,7 @@ This document explains how to configure `Spring Cloud Config Server` application
   ```bash
   curl --silent https://api.github.com/meta | jq --raw-output '"github.com "+.ssh_keys[]' >> ~/.ssh/known_hosts
   ```
-- Store the `id_ecdsa` file created in the pre-requisite in the app environment (VM/Docker container) where app runs.
+- Store the private key file created in the pre-requisite in the app environment (VM/Docker container) where app run in location `~/.ssh/id_ecdsa`
     ```bash
     mkdir -p ~/.ssh
     chmod 700 ~/.ssh
