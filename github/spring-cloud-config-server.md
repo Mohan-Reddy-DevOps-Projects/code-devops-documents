@@ -42,7 +42,6 @@ This document explains how to configure `Spring Cloud Config Server` application
     Port 22
     User git
     IdentityFile ~/.ssh/id_ecdsa
-    AddKeysToAgent yes
     StrictHostKeyChecking yes
   ```
 
