@@ -15,11 +15,32 @@ stages:
         mavenVersionOption: 'Path'
         mavenDirectory: $(SYSTEM_MAVEN_3_HOME)
 
-    # Creating artifacts that contains only the JAR file
+    # Creating artifacts that contains only the JAR file.
+    # Change the JAR file name as per your application artifact name.
     - bash: mkdir artifacts ; cp target/pasta-bishop-*.jar artifacts/
       displayName: Prepare Artifacts
 
     # Publish the artifacts so that the deploy stage can consume it. 
     - publish: artifacts
-      artifact: deploy
+      artifact: drop
       displayName: Publish Artifact
+
+  - job: Nexuslifecycle_scan
+    displayName: Nexuslifecycle scan
+    steps:
+    - task: Maven@4
+      displayName: Plugin
+      inputs:
+        mavenPomFile: 'pom.xml'
+        goals: 'install com.sonatype.clm:clm-maven-plugin:index -Dclm.additionalScopes=provided'
+        options: '-B -e -Dno-docker -DskipTests'
+        javaHomeOption: 'Path'
+        jdkDirectory: $(SYSTEM_JDK_17)
+        mavenVersionOption: 'Path'
+        mavenDirectory: $(SYSTEM_MAVEN_3_HOME)
+
+    - template: lifecycle-scan.yml@sdlc_templates
+      parameters:
+        IQ_API_TOKEN: $(IQ_API_TOKEN)
+        ARTIFACT_VERSION: "$(Build.BuildId)"
+        DISTRIBUTION: Hosted

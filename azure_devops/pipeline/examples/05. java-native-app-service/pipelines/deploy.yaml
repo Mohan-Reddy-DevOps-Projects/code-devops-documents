@@ -69,14 +69,6 @@ stages:
                     "value": "-Xms512m -Xmx1024m" 
                   },
                   {
-                    "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
-                    "value": "~3"
-                  },
-                  {
-                    "name": "XDT_MicrosoftApplicationInsights_Mode",
-                    "value": "recommended"
-                  },
-                  {
                     "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
                     "value": "$(var_APPINSIGHTS_INSTRUMENTATIONKEY)"
                   },
@@ -89,7 +81,7 @@ stages:
               generalSettings: |
                 [
                   {
-                    "linuxFxVersion": "JAVA|11-java11"
+                    "linuxFxVersion": "JAVA|17-java17"
                   }
                 ]
                 
@@ -103,7 +95,7 @@ stages:
               deployToSlotOrASE: true
               SlotName: '$(APP_SERVICE_SLOT)'
               Package: $(Pipeline.Workspace)/drop/*.jar
-              RuntimeStack: "JAVA|11-java11"
+              RuntimeStack: "JAVA|17-java17"
           
           # Starting the app service.
           - task: AzureAppServiceManage@0
