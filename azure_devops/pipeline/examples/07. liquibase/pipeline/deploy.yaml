@@ -1,0 +1,43 @@
+parameters:
+  - name: ado_environment
+  - name: deploy_variable_group
+  - name: stage_name
+    default: 'False'
+  - name: depends_on
+    type: object
+    default: ['ci']
+  - name: condition
+    default: succeeded()
+
+stages:
+  - stage: ${{ parameters.stage_name }}
+    dependsOn: ${{ parameters.depends_on }}
+    condition: ${{ parameters.condition }}
+
+    variables:
+      - group: "${{ parameters.deploy_variable_group }}"
+
+    jobs:
+      - deployment: deploy
+        environment: "${{ parameters.ado_environment }}"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+              - bash: tar xvzf *.tar.gz
+                workingDirectory: $(Pipeline.Workspace)/drop
+                displayName: unTar artifact
+
+              # Store the below variables in a library group in Azure DevOps pipelines.
+              # var_profile, var_db_password, var_db_username
+              # the values are retrieved based on "variable_group".
+              - task: Maven@4
+                displayName: Maven Deploy
+                inputs:
+                  mavenPomFile: '$(Pipeline.Workspace)/drop/pom.xml'
+                  goals: 'liquibase:update'
+                  options: '-B -P $(var_profile) -Ddb.password=$(var_db_password) -Ddb.username=$(var_db_username)'
+                  javaHomeOption: 'Path'
+                  jdkDirectory: $(SYSTEM_JDK_17)
+                  mavenVersionOption: 'Path'
+                  mavenDirectory: $(SYSTEM_MAVEN_3_HOME)

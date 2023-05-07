@@ -1,0 +1,23 @@
+stages:
+- stage: ci
+  jobs:
+  - job: build
+    steps:
+    - task: Maven@4
+      displayName: Maven Build
+      inputs:
+        mavenPomFile: 'pom.xml'
+        goals: 'clean liquibase:validate package'
+        options: '-B'
+        javaHomeOption: 'Path'
+        jdkDirectory: $(SYSTEM_JDK_17)
+        mavenVersionOption: 'Path'
+        mavenDirectory: $(SYSTEM_MAVEN_3_HOME)
+
+    - bash: cp target/*.tar.gz $(Build.ArtifactStagingDirectory)
+      displayName: Prepare Artifact
+
+    - publish: $(Build.ArtifactStagingDirectory)
+      artifact: drop
+      displayName: Publish Artifact
+

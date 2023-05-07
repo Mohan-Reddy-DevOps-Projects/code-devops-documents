@@ -42,6 +42,7 @@ Host github.com
 > - Make sure the file name is `config` and not `config.txt`
 > - If port 443 does not work, change it to port 22.
 
+
 ## Stage 3: Configure SSH Key in GitHub
 In this stage, we will configure the ssh public key in GitHub.
 

@@ -1,0 +1,23 @@
+pool: Premier Linux Agents
+
+stages:
+- template: ci.yaml
+
+- template: deploy.yaml
+  parameters:
+    stage_name: dev_deploy
+    ado_environment: dev
+    deploy_variable_group: liquibase-dev
+
+- template: deploy.yaml
+  parameters:
+    stage_name: dev_deploy
+    ado_environment: qa
+    deploy_variable_group: liquibase-qa
+
+- template: deploy.yaml
+  parameters:
+    stage_name: uat1_deploy
+    ado_environment: uat1
+    deploy_variable_group: liquibase-uat1
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'],'refs/heads/main'))

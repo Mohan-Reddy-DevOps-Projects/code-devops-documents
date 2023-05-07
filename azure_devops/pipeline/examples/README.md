@@ -9,3 +9,4 @@ Please find the yaml pipelines for various types of builds & deployments
 - Python Build and deploy to Azure App Service (no docker). Go [here](./04.%20python-native-app-service/)
 - Maven Java Build and deploy to Azure App Service (no docker). Go [here](./05.%20java-native-app-service/)
 - Azure Container Instance deployment example can be found [here](./06.%20aci/)
+- Are you looking for a liquibase project to make changes to Database? Check [this example](./07.%20liquibase/)
