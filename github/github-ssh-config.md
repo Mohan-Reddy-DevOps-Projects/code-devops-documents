@@ -35,7 +35,7 @@ Host github.com
   Port 443 
   User git
   IdentityFile ~/.ssh/github_ed25519
-  StrictHostKeyChecking yes
+  StrictHostKeyChecking no
 ```
 > **NOTE**: 
 > - Under the identity file, provide the location of the ssh private key file in your username. 
