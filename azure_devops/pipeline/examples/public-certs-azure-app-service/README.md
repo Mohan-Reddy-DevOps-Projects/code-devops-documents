@@ -11,7 +11,7 @@ But, if your application wants to communicate with another service that is runni
 - Upload the Public Certificate to Azure Library -> Secure files.       
     **Note:** Provide name without spaces. For example: member_ldap_cert
 
-- Copy the `update_ca.yaml` template.  This job runs only on windows agents.
+- Copy the `update-ca.yaml` template.  This job runs only on windows agents.
 
 - Add the template job in your deploy.yaml file.
 
