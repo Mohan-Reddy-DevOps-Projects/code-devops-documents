@@ -1,0 +1,59 @@
+parameters: 
+- name: job_name 
+  default: update_ca
+- name: ado_environment 
+- name: cert_secure_file
+- name: az_subscription_sc
+- name: variable_group
+- name: app_service_slot
+  default: 'production'
+
+jobs:
+- deployment: ${{ parameters.job_name }}
+  environment: "${{ parameters.ado_environment }}"
+  pool: Premier Windows Agents # this job works only on premier windows agents.
+  variables:
+  - group: ${{ parameters.variable_group }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        # download the CA certificate from secure file
+        - task: DownloadSecureFile@1
+          inputs:
+            secureFile: ${{ parameters.cert_secure_file }}
+
+        - task: AzurePowerShell@5
+          displayName: Upload CA 
+          inputs:
+            azureSubscription: ${{ parameters.az_subscription_sc }} 
+            ScriptType: 'InlineScript'
+            Inline: |
+
+              $APP_SERVICE_NAME="$(var_az_app_service)"  # obtained from library group
+              $RESOURCE_GROUP_NAME="$(var_az_app_service_rg)" # obtained from library group
+
+              # Downloaded files are stored in Temp Directory
+              $CERTIFICATE_PATH="$(Agent.TempDirectory)\${{ parameters.cert_secure_file }}"
+
+              $CERTIFICATE = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CERTIFICATE_PATH)
+              $PROPERTIES = @{
+                  blob = [Convert]::ToBase64String($CERTIFICATE.RawData)
+                  publicCertificateLocation = "CurrentUserMy"
+              }
+
+              if ("${{ parameters.app_service_slot }}" -eq "staging") {
+                echo "inside if"
+                $APP_SERVICE_NAME = "$APP_SERVICE_NAME-staging"
+              }
+              echo $APP_SERVICE_NAME
+
+              # Upload the certificate
+              New-AzResource -ResourceType 'Microsoft.Web/sites/publicCertificates' -ApiVersion '2022-03-01' `
+                -PropertyObject $PROPERTIES `
+                -ResourceGroupName $RESOURCE_GROUP_NAME `
+                -ResourceName $APP_SERVICE_NAME/${{ parameters.cert_secure_file }} `
+                -Force
+            FailOnStandardError: true
+            azurePowerShellVersion: 'LatestVersion'
+

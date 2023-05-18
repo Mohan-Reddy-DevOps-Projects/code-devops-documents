@@ -1,0 +1,213 @@
+parameters:
+- name: ado_environment
+- name: deploy_variable_group
+- name: stage_name
+- name: az_subscription_sc
+- name: blue_green
+  default: 'False'
+- name: depends_on
+  type: object
+  default: ['ci']
+- name: condition
+  default: succeeded()
+
+stages:
+- stage: ${{ parameters.stage_name }}
+  dependsOn: ${{ parameters.depends_on }}
+  condition: ${{ parameters.condition }}
+
+  variables:
+  - group: "${{ parameters.deploy_variable_group }}"
+  - ${{ if in(parameters.blue_green, 'False', 'false') }}:
+    - name: APP_SERVICE_SLOT
+      value: 'production'
+  - ${{ if in(parameters.blue_green, 'True', 'true') }}:
+    - name: APP_SERVICE_SLOT
+      value: 'staging' 
+
+  jobs:
+  # Job that upload public certificate to App Service
+  - template: update-ca.yaml
+    parameters: 
+      job_name: update_ca
+      ado_environment: "${{ parameters.ado_environment }}"
+      cert_secure_file: 'member_ldap_cert' 
+      variable_group: "${{ parameters.deploy_variable_group }}"
+      app_service_slot: $(APP_SERVICE_SLOT)
+      az_subscription_sc: ${{ parameters.az_subscription_sc }} 
+
+  - deployment: deploy
+    environment: "${{ parameters.ado_environment }}"
+    dependsOn: update_ca
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          # Stopping the app service before upgrading
+          - task: AzureAppServiceManage@0
+            displayName: Stop the App Service
+            inputs:
+              azureSubscription:  ${{ parameters.az_subscription_sc }} 
+              ResourceGroupName: $(var_az_app_service_rg)
+              WebAppName: $(var_az_app_service)
+              Action: 'Stop Azure App Service' 
+              SpecifySlotOrASE: true
+              Slot: '$(APP_SERVICE_SLOT)'
+
+          - task: AzureAppServiceSettings@1
+            displayName: Updating App Settings
+            inputs:
+              azureSubscription: ${{ parameters.az_subscription_sc }}
+              appName: $(var_az_app_service)
+              resourceGroupName: $(var_az_app_service_rg)
+              slotName: '$(APP_SERVICE_SLOT)'
+              #  -Djavax.net.ssl.trustStore=truststore/truststore.jks -Djavax.net.ssl.trustStoreType=jks -Djavax.net.ssl.trustStorePassword=premier1
+              appSettings: |
+                [
+                  {
+                    "name": "SPRING_PROFILES_ACTIVE",
+                    "value": "$(var_spring_profiles_active)"
+                  },
+                  {
+                    "name": "PORT",
+                    "value": "8080"
+                  },
+                  {
+                    "name": "JAVA_OPTS",
+                    "value": "-Xms512m -Xmx1024m"
+                  },
+                  {
+                    "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                    "value": "~3"
+                  },
+                  {
+                    "name": "XDT_MicrosoftApplicationInsights_Mode",
+                    "value": "recommended"
+                  },
+                  {
+                    "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                    "value": "$(var_APPINSIGHTS_INSTRUMENTATIONKEY)"
+                  },
+                  {
+                    "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                    "value": "$(var_APPLICATIONINSIGHTS_CONNECTION_STRING)"
+                  }
+                ]
+              # This is mandatory to set the Azure App Service Stack.
+              generalSettings: |
+                [
+                  {
+                    "linuxFxVersion": "JAVA|11-java11"
+                  }
+                ]
+                
+          - task: AzureRmWebAppDeployment@4
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: ${{ parameters.az_subscription_sc }}
+              ResourceGroupName: $(var_az_app_service_rg)
+              WebAppName: $(var_az_app_service)
+              appType: 'webAppLinux'
+              deployToSlotOrASE: true
+              SlotName: '$(APP_SERVICE_SLOT)'
+              Package: $(Pipeline.Workspace)/drop/*.jar
+              RuntimeStack: "JAVA|11-java11"
+          
+          # Starting the app service.
+          - task: AzureAppServiceManage@0
+            displayName: Start the App Service
+            inputs:
+              azureSubscription:  ${{ parameters.az_subscription_sc }} 
+              ResourceGroupName: $(var_az_app_service_rg)
+              WebAppName: $(var_az_app_service)
+              Action: 'Start Azure App Service' 
+              SpecifySlotOrASE: true
+              Slot: '$(APP_SERVICE_SLOT)'
+
+          # if blue_green is false, then app directly deploy to "production" slot
+          # hence we are stopping staging slot for saving resources.
+          - ${{ if in(parameters.blue_green, 'False', 'false') }}:
+            - task: AzureAppServiceManage@0
+              displayName: Stop the Standby Slot
+              inputs:
+                azureSubscription:  ${{ parameters.az_subscription_sc }} 
+                ResourceGroupName: $(var_az_app_service_rg)
+                WebAppName: $(var_az_app_service)
+                Action: 'Stop Azure App Service' 
+                SpecifySlotOrASE: true
+                Slot: 'staging'
+
+
+# in blue green model, first app is deploy to "staging" slot.  
+# If all looks good, do a LB switch to "production" slot
+- ${{ if in(parameters.blue_green, 'True', 'true') }}:
+  - stage: ${{ parameters.stage_name }}_GREEN_LIVE
+    condition: ${{ parameters.condition }}
+    dependsOn: ${{ parameters.stage_name }}
+    
+    variables:
+      - group: "${{ parameters.deploy_variable_group }}"
+
+    jobs:
+    - deployment: switch_slots
+      environment: "${{ parameters.ado_environment }}"
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - download: none 
+            
+            # Only active slots can be swapped. Hence starting the standyby slot if not started already
+            - task: AzureAppServiceManage@0
+              displayName: Start the Standby Slot
+              inputs:
+                azureSubscription:  ${{ parameters.az_subscription_sc }} 
+                ResourceGroupName: $(var_az_app_service_rg)
+                WebAppName: $(var_az_app_service)
+                Action: 'Start Azure App Service' 
+                SpecifySlotOrASE: true
+                Slot: 'staging'
+
+            # Only active slots can be swapped. Hence starting the production slot if not started already
+            - task: AzureAppServiceManage@0
+              displayName: Start the Standby Slot
+              inputs:
+                azureSubscription:  ${{ parameters.az_subscription_sc }} 
+                ResourceGroupName: $(var_az_app_service_rg)
+                WebAppName: $(var_az_app_service)
+                Action: 'Start Azure App Service' 
+                SpecifySlotOrASE: true
+                Slot: 'production'
+
+            # updating certificates in production
+            - template: update-ca.yaml
+              parameters: 
+                job_name: update_ca
+                ado_environment: "${{ parameters.ado_environment }}"
+                cert_secure_file: 'member_ldap_cert' 
+                variable_group: "${{ parameters.deploy_variable_group }}"
+                app_service_slot: production
+                az_subscription_sc: ${{ parameters.az_subscription_sc }} 
+
+            - task: AzureAppServiceManage@0
+              inputs:
+                azureSubscription: ${{ parameters.az_subscription_sc }}
+                ResourceGroupName: $(var_az_app_service_rg)
+                WebAppName: $(var_az_app_service)
+                Action: 'Swap Slots'
+                SourceSlot: 'staging'
+                PreserveVnet: true
+                SwapWithProduction: true
+
+            # Stopping the standby slot for saving resources. 
+            - task: AzureAppServiceManage@0
+              displayName: Stop the Standby Slot
+              inputs:
+                azureSubscription:  ${{ parameters.az_subscription_sc }} 
+                ResourceGroupName: $(var_az_app_service_rg)
+                WebAppName: $(var_az_app_service)
+                Action: 'Stop Azure App Service' 
+                SpecifySlotOrASE: true
+                Slot: 'staging'
+              
