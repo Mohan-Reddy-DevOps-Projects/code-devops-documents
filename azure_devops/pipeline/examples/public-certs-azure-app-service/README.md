@@ -5,6 +5,8 @@ In App Service, your application runs on HTTP (non-TLS) mode. By default, Azure 
 
 But, if your application wants to communicate with another service that is running on HTTPS and is using custom certificate provided by PremierInc CA or custom CA, then you need to add the PremierInc CA certificate or custom CA certificate to Azure app service. 
 
+>Note: This is useful for non-Container based deployments. For Container based, add the truststore as part of Docker Image. 
+
 # Steps to add Public Certificates to App Service
 - Upload the Public Certificate to Azure Library -> Secure files.       
     **Note:** Provide name without spaces. For example: member_ldap_cert

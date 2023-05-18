@@ -150,8 +150,19 @@ stages:
       - group: "${{ parameters.deploy_variable_group }}"
 
     jobs:
+    # updating certificates in production
+    - template: update-ca.yaml
+      parameters: 
+        job_name: update_ca
+        ado_environment: "${{ parameters.ado_environment }}"
+        cert_secure_file: 'member_ldap_cert' 
+        variable_group: "${{ parameters.deploy_variable_group }}"
+        app_service_slot: production
+        az_subscription_sc: ${{ parameters.az_subscription_sc }} 
+
     - deployment: switch_slots
       environment: "${{ parameters.ado_environment }}"
+      dependsOn: update_ca
       strategy:
         runOnce:
           deploy:
@@ -179,16 +190,6 @@ stages:
                 Action: 'Start Azure App Service' 
                 SpecifySlotOrASE: true
                 Slot: 'production'
-
-            # updating certificates in production
-            - template: update-ca.yaml
-              parameters: 
-                job_name: update_ca
-                ado_environment: "${{ parameters.ado_environment }}"
-                cert_secure_file: 'member_ldap_cert' 
-                variable_group: "${{ parameters.deploy_variable_group }}"
-                app_service_slot: production
-                az_subscription_sc: ${{ parameters.az_subscription_sc }} 
 
             - task: AzureAppServiceManage@0
               inputs:
