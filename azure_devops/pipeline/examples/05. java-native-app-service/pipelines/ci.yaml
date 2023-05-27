@@ -25,8 +25,9 @@ stages:
       artifact: drop
       displayName: Publish Artifact
 
-  - job: Nexuslifecycle_scan
-    displayName: Nexuslifecycle scan
+  - job: Security Scan
+    variables: 
+    - group: SDLC Credentials
     steps:
     - task: Maven@4
       displayName: Plugin

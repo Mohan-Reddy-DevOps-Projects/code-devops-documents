@@ -4,9 +4,7 @@ Follow this document if you use maven to build java project and deploy to Azure 
 # Pre-requisite
 - Make sure you have access to subscription in Azure Cloud. 
 - Make sure you can view the app service created by Cloud DevOps Team in Azure Cloud as we have to pull some values from the app service.
-- A Service Connection of type "Azure Resource Manager" for your subscription is needed in the Azure DevOps. For example, if your subscription name is `SUB_LMS_PROD`, then we need a service connection of type "Azure Resource Manager" in Azure DevOps as `SC_ARM_LMS_PROD`. 
-  - Only Cloud security team can do this. Open snow ticket with cloud security team for this [here](https://premierprod.service-now.com/premiernow?id=dept_cat_item&sys_id=c64bdf091bdc2494be08975e034bcbbb)
-  - Select "Azure" in Environment.
+- Follow steps [here](../../troubleshooting.md#azure-arm-service-connection) to create ARM Service Connection.
 
 - Retrieve the App service name, App Service Resource Group from Azure Cloud.
 
@@ -16,13 +14,15 @@ Follow this document if you use maven to build java project and deploy to Azure 
     | --- | --- |
     | var_az_app_service_rg | ResourceGroupName (Mandatory) |
     | var_az_app_service | AppServiceName (Mandatory) | 
-    | var_APPINSIGHTS_INSTRUMENTATIONKEY | Get it from AppInsights |
-    | var_APPLICATIONINSIGHTS_CONNECTION_STRING | Get it from AppInsights |
     | var_spring_profiles_active | Optional_Used_in_AppSettings | 
+    | var_appinsights | AppInsightsName | 
+    | var_az_keyvault | Az Key vault if you need | 
+    | var_az_db_password | IamBatman | 
 
 # Points to consider
 
 - Make sure your application is running without TLS/SSL.
+- If your app needs secrets like "DB_Password", then consider using Azure Key Vault. 
 
 # Pipeline explanation
 - **pipelines/azure-pipeline.yaml** is the root pipeline file.  Modify the maven goals & options as per your application.
@@ -35,3 +35,5 @@ Follow this document if you use maven to build java project and deploy to Azure 
   - To define your application port, consider setting `PORT` in app settings. Check the `pipelines/deploy.yaml` file. 
   - To control the Heap Memory in Java application, you have to set the `JAVA_OPTS` in the app settings. Check the `pipelines/deploy.yaml` file. 
   - If your application needs environment variable, it needs to be passed as app settings. Check the `pipelines/deploy.yaml` file.
+  - Also covered steps on how to use key vault in `pipelines/deploy.yaml` file. You can remove it if you think that's not required for your app. 
+  - Application Health Check can also be configured. 

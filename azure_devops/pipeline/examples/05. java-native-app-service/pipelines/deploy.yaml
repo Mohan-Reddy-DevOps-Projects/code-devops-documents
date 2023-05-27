@@ -36,6 +36,30 @@ stages:
         deploy:
           steps:
 
+          - task: AzureCLI@2
+            displayName: Retrieve App Insights Details
+            inputs:
+              azureSubscription: ${{ parameters.az_subscription_sc }}
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                app_insights_instrumentation_key=$(az resource show --resource-type "microsoft.insights/components" --query properties.InstrumentationKey -g $(var_az_app_service_rg) -n $(var_app_insights))
+                app_insights_connection_string=$(az resource show --resource-type "microsoft.insights/components" --query properties.ConnectionString -g $(var_az_app_service_rg) -n $(var_app_insights))
+                echo "##vso[task.setvariable variable=APP_INSIGHTS_INSTRUMENTATION_KEY;isOutput=true]$app_insights_instrumentation_key"
+                echo "##vso[task.setvariable variable=APP_INSIGHTS_CONNECTION_STRING;isOutput=true]$app_insights_connection_string"
+
+          # in case if your app requires secrets like db_password, we need the below task to upload secret to azure key vault
+          # if you don't need, then comment it out.
+          - task: AzureCLI@2
+            displayName: Uploads Secrets to Azure KV
+            inputs:
+              azureSubscription: ${{ parameters.az_subscription_sc }}
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az keyvault secret set --name csa-op-app-datasource-password --vault-name $(var_az_keyvault) --value "$(var_az_db_password)"
+                az keyvault secret set --name csa-op-app-datasource-username --vault-name $(var_az_keyvault) --value "$(var_az_db_password)"
+
           # Stopping the app service before upgrading
           - task: AzureAppServiceManage@0
             displayName: Stop the App Service
@@ -70,18 +94,28 @@ stages:
                   },
                   {
                     "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                    "value": "$(var_APPINSIGHTS_INSTRUMENTATIONKEY)"
+                    "value": "$(APP_INSIGHTS_INSTRUMENTATION_KEY)"
                   },
                   {
                     "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
-                    "value": "$(var_APPLICATIONINSIGHTS_CONNECTION_STRING)"
+                    "value": "$(APP_INSIGHTS_CONNECTION_STRING)"
+                  },
+                  # here we pass the key vault details to the application variables
+                  {
+                    "name": "csa_op.app.datasource.username",
+                    "value": "@Microsoft.KeyVault(VaultName=$(var_az_keyvault);SecretName=csa-op-app-datasource-username)"
+                  },
+                  {
+                    "name": "csa_op.app.datasource.password",
+                    "value": "@Microsoft.KeyVault(VaultName=$(var_az_keyvault);SecretName=csa-op-app-datasource-password)"
                   }
                 ]
               # This is mandatory to set the Azure App Service Stack.
               generalSettings: |
                 [
                   {
-                    "linuxFxVersion": "JAVA|17-java17"
+                    "linuxFxVersion": "JAVA|17-java17",
+                    "healthCheckPath": "/ping"
                   }
                 ]
                 
