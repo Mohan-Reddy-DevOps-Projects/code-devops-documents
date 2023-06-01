@@ -55,6 +55,7 @@ This document explains how to configure `Spring Cloud Config Server` application
                 server:
                     git:
                         uri: git@github.com/premierinc/lms-config.git
+                        default-label: main
     ```
 
 # Reference
