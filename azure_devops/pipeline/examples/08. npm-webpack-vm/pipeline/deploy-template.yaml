@@ -1,0 +1,43 @@
+parameters:
+- name: stage_name
+- name: condition
+  default: succeeded()
+- name: ado_environment
+- name: service_connection
+- name: dependsOn 
+  default: ['ci']
+  type: object 
+
+stages:
+- stage: ${{ parameters.stage_name }}
+  dependsOn: ${{ parameters.dependsOn }}
+  condition: ${{ parameters.condition }}
+  jobs:
+  - deployment: deploy
+    environment: ${{ parameters.ado_environment }}
+    variables:
+      TARGET_DIR: '/opt/app/sca/html/host'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: CopyFilesOverSSH@0
+            inputs:
+              sshEndpoint: ${{ parameters.service_connection }}
+              sourceFolder: '$(Pipeline.Workspace)/drop'
+              contents: '**'
+              targetFolder: $(TARGET_DIR)
+              cleanTargetFolder: true
+              readyTimeout: '20000'
+              failOnEmptySource: true
+
+          - task: SSH@0
+            displayName: Reload App
+            inputs:
+              sshEndpoint: ${{ parameters.service_connection }}
+              runOptions: 'inline'
+              inline: |
+                PM2_APP="sca-host-ui"
+                [[ -z `pm2 pid $PM2_APP` ]] && echo "$PM2_APP not present" || pm2 delete $PM2_APP
+                pm2 serve $(TARGET_DIR) --name $PM2_APP --spa
+              readyTimeout: '20000'

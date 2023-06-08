@@ -1,0 +1,46 @@
+stages:
+- stage: ci
+  displayName: 'Building the Host UI'
+  jobs:
+  - job: Build 
+    variables:
+      npm_config_cache: $(Pipeline.Workspace)/.npm
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.14.2'
+
+    - task: Cache@2
+      inputs:
+        key: 'npm | "$(Agent.OS)" | package-lock.json'
+        restoreKeys: |
+          npm | "$(Agent.OS)"
+        path: $(npm_config_cache)
+      displayName: Cache npm
+
+    - bash: npm ci --verbose 
+      displayName: Install NPM dependencies 
+
+    - bash: npm run build --verbose ; cp package.json webpack/build 
+      displayName: Build Package
+
+    - publish: webpack/build
+      artifact: drop 
+
+  - job: Security_Scan
+    variables:
+    - group: 'SDLC Credentials'
+    steps: 
+    - template: checkmarx-scan.yml@sdlc_templates
+      parameters:
+        CHECKMARX_PASSWORD: $(CHECKMARX_PASSWORD)
+        PROJECT_NAME: "sca-host-ui"
+        PROJECT_VERSION: "$(Build.BuildId)"
+        TEAM: "sca"
+
+    - template: lifecycle-scan.yml@sdlc_templates
+      parameters:
+        IQ_API_TOKEN: $(IQ_API_TOKEN)
+        ARTIFACT_VERSION: "$(Build.BuildId)"
+        DISTRIBUTION: Hosted
+
