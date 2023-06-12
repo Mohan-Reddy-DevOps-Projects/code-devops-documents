@@ -76,7 +76,7 @@ Following the completion of the preceding procedures, the below are some extra a
 Below you will the terms which should be modified for Nexus task:
 
 
-**serverURL:** https://nexusiq.premierinc.com/ 
+**serverURL:** https://nexusiq.premierinc.com/  
 Required Nexus Repository Server URL
 
 **username:**  
@@ -98,7 +98,7 @@ The scan target to be evaluated for the scan.
 
 -----
 
-#References:
+**References:**
  
 1. [Nexus-repository-publisher-for-github-actions](https://github.com/marketplace/actions/nexus-repository-publisher-for-github-actions) 
 
