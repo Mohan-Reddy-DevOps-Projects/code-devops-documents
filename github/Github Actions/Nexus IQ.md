@@ -47,11 +47,11 @@ The run keyword tells the job to execute a command on the runner.
 
 Following the completion of the preceding procedures, the below are some extra actions for configuring Nexus IQ:  
 
- -1. We need to incorporate Java setup into our process. This configuration was obtained from the Github marketplace. - Setup Java JDK  
+-1. We need to incorporate Java setup into our process. This configuration was obtained from the Github marketplace. - Setup Java JDK  
 
- -2. Install Maven and configure it to run the POM file  
+-2. Install Maven and configure it to run the POM file  
 
- -3. Add the Nexus task as indicated in the screenshot below  
+-3. Add the Nexus task as indicated in the screenshot below  
  
 ```````
       - name: Set up JDK 17
@@ -71,3 +71,33 @@ Following the completion of the preceding procedures, the below are some extra a
           applicationId: aniket-nexus
           stage: Build
           target: ./target/
+```````
+Below you will the terms which should be modified for Nexus task:
+
+**serverURL:** https://nexusiq.premierinc.com/ 
+Required Nexus Repository Server URL
+
+**username:**
+Required Username to connect to Nexus Repo to publish components.
+
+**password:**
+Required Password to connect to Nexus Repo to publish components.
+
+Github secrets  should be used to access or add username and password.
+
+**applicationId:**
+The required name of the target repository should be exactly as added in Nexus IQ.
+
+**stage:**
+The stage at which the report must be published (Build or stage-release).
+
+**target:**
+The scan target to be evaluated for the scan.
+
+-----
+
+References:
+ 
+1. [Nexus-repository-publisher-for-github-actions](https://github.com/marketplace/actions/nexus-repository-publisher-for-github-actions) 
+
+2. [Nexus-repo-github-action](https://github.com/sonatype-nexus-community/nexus-repo-github-action) 
