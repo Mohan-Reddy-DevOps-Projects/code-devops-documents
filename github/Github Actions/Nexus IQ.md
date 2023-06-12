@@ -5,6 +5,8 @@ To create Github Actions for Nexus IQ we need to have access to actions in Githu
 
 **Note:** Github Actions for Sonatype Nexus is NOT OFFICIALLY SUPPORTED by Sonatype; hence, you will not find it in the marketplace; instead, select "Simple Workflow" and customize it as needed.
 
+---
+
 "Simple Workflow" gives you some basic workflow to help you get started with Actions
 
 The following are some basic terms:
