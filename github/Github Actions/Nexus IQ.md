@@ -45,10 +45,29 @@ The run keyword tells the job to execute a command on the runner.
 
 -----
 
-Following the completion of the preceding procedures, the following are some extra actions for configuring Nexus IQ:  
+Following the completion of the preceding procedures, the below are some extra actions for configuring Nexus IQ:  
 
  -1. We need to incorporate Java setup into our process. This configuration was obtained from the Github marketplace. - Setup Java JDK  
 
  -2. Install Maven and configure it to run the POM file  
 
  -3. Add the Nexus task as indicated in the screenshot below  
+ 
+```````
+      - name: Set up JDK 17
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+          
+      - name: Build with Maven
+        run: mvn package --file pom.xml
+        
+      - name: Nexus IQ Policy Evaluation
+        uses: sonatype-nexus-community/iq-github-action@master
+        with:
+          serverUrl: https://nexusiq.premierinc.com/
+          username: ${{secrets.IQ_USER}}
+          password: ${{secrets.IQ_TOKEN}}
+          applicationId: aniket-nexus
+          stage: Build
+          target: ./target/
