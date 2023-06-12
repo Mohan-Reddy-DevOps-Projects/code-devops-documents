@@ -11,31 +11,31 @@ To create Github Actions for Nexus IQ we need to have access to actions in Githu
 
 The following are some basic terms:
 
-**name:**
+**name:**  
 Optional - The name of the workflow as it will appear in the "Actions" tab of the GitHub repository.
 
-**on:** Controls when the process will be executed
+**on:** Controls when the process will be executed  
 for example: Initiates the workflow on push or pull request events, but only for the "main" branch (if left blank, this is triggered by a push and pull to every branch).
 
-  **push:** (When someone pushes a change to the repository)
-  **branches:** [ "main" ]
-  **pull_request:** (When merges a pull request)
-  **branches:** [ "main" ]
+  **push:** (When someone pushes a change to the repository)  
+  **branches:** [ "main" ]  
+  **pull_request:** (When merges a pull request)  
+  **branches:** [ "main" ]  
 
-**workflow_dispatch:**
+**workflow_dispatch:**  
 Allows you to perform this workflow manually from the Actions tab.
 
 **jobs:**  
 A workflow run is made up of one or more tasks that can execute sequentially or in parallel.
 
-**build:**
+**build:**  
 This is the name of a job; there is only one task in this workflow named "build."
 
-**runs-on:**
+**runs-on:**  
 This should be set to "premierinc" The kind of agent on which the task will run.
 
-**Steps:**
+**Steps:**  
 It illustrates a series of tasks that will be completed as part of the work. Each item in this section is a distinct action or shell script.
 
-**uses: actions/checkout@v3**
+**uses: actions/checkout@v3**  
 The uses keyword specifies that this step will run v3 of the actions/checkout action. This is an action that checks out your repository onto the $GITHUB_WORKSPACE, allowing you to run scripts or other actions against your code.
