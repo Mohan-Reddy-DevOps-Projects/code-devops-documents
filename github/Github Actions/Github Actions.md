@@ -4,7 +4,7 @@ Table of contents
 
 <!--ts-->
    * [What are GITHUB actions?](#What are GITHUB actions)
-   * [components](#The components of GitHub Actions)
+   * [The components of GitHub Actions](#[The components of GitHub Actions])
    * [Reference](#Reference)
 <!--te-->
 
