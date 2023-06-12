@@ -20,3 +20,21 @@ for example: Initiates the workflow on push or pull request events, but only for
   **branches:** [ "main" ]
   **pull_request:** (When merges a pull request)
   **branches:** [ "main" ]
+
+**workflow_dispatch:**
+Allows you to perform this workflow manually from the Actions tab.
+
+**jobs:**
+A workflow run is made up of one or more tasks that can execute sequentially or in parallel.
+
+**build:**
+This is the name of a job; there is only one task in this workflow named "build."
+
+**runs-on:**
+This should be set to "premierinc" The kind of agent on which the task will run.
+
+**Steps:**
+It illustrates a series of tasks that will be completed as part of the work. Each item in this section is a distinct action or shell script.
+
+**uses: actions/checkout@v3**
+The uses keyword specifies that this step will run v3 of the actions/checkout action. This is an action that checks out your repository onto the $GITHUB_WORKSPACE, allowing you to run scripts or other actions against your code.
