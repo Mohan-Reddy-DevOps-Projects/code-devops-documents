@@ -39,3 +39,16 @@ It illustrates a series of tasks that will be completed as part of the work. Eac
 
 **uses: actions/checkout@v3**  
 The uses keyword specifies that this step will run v3 of the actions/checkout action. This is an action that checks out your repository onto the $GITHUB_WORKSPACE, allowing you to run scripts or other actions against your code.
+
+**run:**  
+The run keyword tells the job to execute a command on the runner.
+
+-----
+
+Following the completion of the preceding procedures, the following are some extra actions for configuring Nexus IQ:  
+
+ -1. We need to incorporate Java setup into our process. This configuration was obtained from the Github marketplace. - Setup Java JDK  
+
+ -2. Install Maven and configure it to run the POM file  
+
+ -3. Add the Nexus task as indicated in the screenshot below  
