@@ -83,7 +83,7 @@ Required Username to connect to Nexus Repo to publish components.
 **password:**
 Required Password to connect to Nexus Repo to publish components.
 
-Github secrets  should be used to access or add username and password.
+//Github secrets  should be used to access or add username and password.//
 
 **applicationId:**
 The required name of the target repository should be exactly as added in Nexus IQ.
