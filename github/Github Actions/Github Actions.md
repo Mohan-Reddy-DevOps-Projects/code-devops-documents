@@ -1,5 +1,5 @@
 
-#What are GITHUB actions?
+**What are GITHUB actions?**
 
 GitHub Actions is a CI/CD platform that allows you to automate your build, test, and deployment process. You can build and test every pull request in your repository with processes, or you may deploy merged pull requests to production.
 
@@ -18,18 +18,18 @@ Diagram of an event triggering Runner 1 to run Job 1, which triggers Runner 2 to
 ![image](https://github.com/PremierInc/code-devops-documents/assets/99402485/58d5c3cd-c6b1-4949-af9f-089744894a24)
 
   - [Workflows](https://docs.github.com/en/actions/using-workflows)
-A workflow is a programmable automated procedure that does one or more jobs. Workflows are specified by a YAML file that is checked into your repository and will execute when an event in your repository triggers them, or they may be activated manually or on a predefined timetable.
+  A workflow is a programmable automated procedure that does one or more jobs. Workflows are specified by a YAML file that is checked into your repository and will execute when an event in your repository triggers them, or they may be activated manually or on a predefined timetable.
 
-Workflows are specified in a repository's .github/workflows directory, and a repository can have many workflows, each of which can conduct a unique set of actions. For example, you may have one process that builds and tests pull requests, another that deploys your application whenever a release is made, and still another that adds a label if someone opens a new issue.
+  Workflows are specified in a repository's .github/workflows directory, and a repository can have many workflows, each of which can conduct a unique set of actions. For example, you may have one process that builds and tests pull requests, another that deploys your application whenever a release is made, and still another that adds a label if someone opens a new issue.
 
   - [Events](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows) 
-An event is a specific behavior in a repository that initiates the execution of a process. For example, activity on GitHub can begin when someone submits a pull request, starts an issue, or commits to a repository. You may also plan a procedure to run on a regular basis by submitting to a REST API or manually.
+  An event is a specific behavior in a repository that initiates the execution of a process. For example, activity on GitHub can begin when someone submits a pull request, starts an issue, or commits to a repository. You may also plan a procedure to run on a regular basis by submitting to a REST API or manually.
 
   - [Jobs](https://docs.github.com/en/actions/using-jobs) 
-A job is a collection of process stages that are all executed on the same runner. Each step is either a shell script to be executed or an action to be performed. Steps are carried out sequentially and are interdependent. Because each step is done on the same runner, data may be shared from one step to the next. For example, you may have a step that produces your application, followed by a step that tests the constructed application.
+  A job is a collection of process stages that are all executed on the same runner. Each step is either a shell script to be executed or an action to be performed. Steps are carried out sequentially and are interdependent. Because each step is done on the same runner, data may be shared from one step to the next. For example, you may have a step that produces your application, followed by a step that tests the constructed application.
 
   - [Actions](https://docs.github.com/en/actions/creating-actions) 
-An action is a custom application for the GitHub Actions platform that performs a difficult but regularly performed job. Use an action to help decrease the amount of repeated code in your workflow files. An action can get your git repository from GitHub, install the necessary toolchain for your build environment, or configure authentication with your cloud provider.
+  An action is a custom application for the GitHub Actions platform that performs a difficult but regularly performed job. Use an action to help decrease the amount of repeated code in your workflow files. An action can get your git repository from GitHub, install the necessary toolchain for your build environment, or configure authentication with your cloud provider.
 
 # References:
 - [Understanding GitHub Actions](https://docs.github.com/en/actions/learn-github-actions/understanding-github-actions#understanding-the-workflow-file) 
