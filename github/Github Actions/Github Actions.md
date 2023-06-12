@@ -3,8 +3,8 @@ Table of contents
 =================
 
 <!--ts-->
-   * [What are GITHUB actions?](#What are GITHUB actions?)
-   * [The components of GitHub Actions](#components)
+   * [What are GITHUB actions?](#What are GITHUB actions)
+   * [The components of GitHub Actions](#The components of GitHub Actions)
    * [Reference](#Reference)
 <!--te-->
 
