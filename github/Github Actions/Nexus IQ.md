@@ -11,7 +11,8 @@ To create Github Actions for Nexus IQ we need to have access to actions in Githu
 
 The following are some basic terms:
 
-**name:** Optional - The name of the workflow as it will appear in the "Actions" tab of the GitHub repository.
+**name:**
+Optional - The name of the workflow as it will appear in the "Actions" tab of the GitHub repository.
 
 **on:** Controls when the process will be executed
 for example: Initiates the workflow on push or pull request events, but only for the "main" branch (if left blank, this is triggered by a push and pull to every branch).
@@ -24,7 +25,7 @@ for example: Initiates the workflow on push or pull request events, but only for
 **workflow_dispatch:**
 Allows you to perform this workflow manually from the Actions tab.
 
-**jobs:**
+**jobs:**  
 A workflow run is made up of one or more tasks that can execute sequentially or in parallel.
 
 **build:**
