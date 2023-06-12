@@ -79,26 +79,26 @@ Below you will the terms which should be modified for Nexus task:
 **serverURL:** https://nexusiq.premierinc.com/ 
 Required Nexus Repository Server URL
 
-**username:**
+**username:**  
 Required Username to connect to Nexus Repo to publish components.
 
-**password:**
-Required Password to connect to Nexus Repo to publish components.
+**password:**  
+Required Password to connect to Nexus Repo to publish components.  
 
 _Github secrets  should be used to access or add username and password._
 
-**applicationId:**
+**applicationId:**  
 The required name of the target repository should be exactly as added in Nexus IQ.
 
-**stage:**
+**stage:**  
 The stage at which the report must be published (Build or stage-release).
 
-**target:**
+**target:**  
 The scan target to be evaluated for the scan.
 
 -----
 
-References:
+#References:
  
 1. [Nexus-repository-publisher-for-github-actions](https://github.com/marketplace/actions/nexus-repository-publisher-for-github-actions) 
 
