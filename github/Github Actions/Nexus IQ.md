@@ -6,7 +6,7 @@ To create Github Actions for Nexus IQ we need to have access to actions in Githu
 "Simple Workflow" gives you some basic workflow to help you get started with Actions
 
 The following are some basic terms:
-````````````````
+~~~~~~~~~~~
 **name:** Optional - The name of the workflow as it will appear in the "Actions" tab of the GitHub repository.
 
 **on:** Controls when the process will be executed
