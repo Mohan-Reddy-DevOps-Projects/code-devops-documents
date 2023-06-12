@@ -9,7 +9,7 @@ To execute your processes, GitHub provides virtual machines for Linux, Windows, 
 
 It is an extremely powerful tool for running CI processes in a developer-friendly way. Actions enables seamless CI coordination while allowing the company to keep its secrets private and maintain control over the computing infrastructure.
 
-# [The components of GitHub Actions](https://docs.github.com/en/actions/using-workflows)
+**[The components of GitHub Actions](https://docs.github.com/en/actions/using-workflows)**
 
 You may set up a GitHub Actions process to be triggered whenever an event occurs in your repository, such as the opening of a pull request or the creation of an issue. Your workflow includes one or more jobs that can execute sequentially or concurrently. Each job will operate in its own virtual machine runner or container, and will have one or more stages that either execute a script you describe or perform an action, which is a reusable addition that can simplify your workflow.
 
@@ -19,7 +19,6 @@ Diagram of an event triggering Runner 1 to run Job 1, which triggers Runner 2 to
 
   - [Workflows](https://docs.github.com/en/actions/using-workflows)
   A workflow is a programmable automated procedure that does one or more jobs. Workflows are specified by a YAML file that is checked into your repository and will execute when an event in your repository triggers them, or they may be activated manually or on a predefined timetable.
-
   Workflows are specified in a repository's .github/workflows directory, and a repository can have many workflows, each of which can conduct a unique set of actions. For example, you may have one process that builds and tests pull requests, another that deploys your application whenever a release is made, and still another that adds a label if someone opens a new issue.
 
   - [Events](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows) 
