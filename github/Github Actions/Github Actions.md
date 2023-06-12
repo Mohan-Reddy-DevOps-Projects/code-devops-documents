@@ -1,4 +1,13 @@
 
+Table of contents
+=================
+
+<!--ts-->
+   * [What are GITHUB actions?](#What are GITHUB actions?)
+   * [The components of GitHub Actions](#components)
+   * [Reference](#Reference)
+<!--te-->
+
 **What are GITHUB actions?**
 
 GitHub Actions is a CI/CD platform that allows you to automate your build, test, and deployment process. You can build and test every pull request in your repository with processes, or you may deploy merged pull requests to production.
