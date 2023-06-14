@@ -38,6 +38,7 @@ stages:
 
           - task: AzureCLI@2
             displayName: Retrieve App Insights Details
+            name: app_insights
             inputs:
               azureSubscription: ${{ parameters.az_subscription_sc }}
               scriptType: 'bash'
@@ -92,13 +93,18 @@ stages:
                     "name": "JAVA_OPTS",
                     "value": "-Xms512m -Xmx1024m" 
                   },
+                  # values are obtained from app_insights first task in this job.
                   {
                     "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                    "value": "$(APP_INSIGHTS_INSTRUMENTATION_KEY)"
+                    "value": "$(app_insights.APP_INSIGHTS_INSTRUMENTATION_KEY)"
                   },
                   {
                     "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
-                    "value": "$(APP_INSIGHTS_CONNECTION_STRING)"
+                    "value": "$(app_insights.APP_INSIGHTS_CONNECTION_STRING)"
+                  },
+                  {
+                  "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                  "value": "~3" # linux
                   },
                   # here we pass the key vault details to the application variables
                   {

@@ -37,7 +37,8 @@ Follow this document if you use maven to build your docker image and push to ACR
     | var_acr_name | lmsdevacr |
     | var_az_app_service_rg | RG_CommonEast_LMS | 
     | var_az_app_service | lms_config_service | 
-
+    | var_appinsights | AppInsightsName | 
+    
     ![library_group](./resources/library_group.png)
 
 - This example allows you to do `blue_green` deployment model. 

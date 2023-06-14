@@ -57,6 +57,19 @@ stages:
                 docker image push $(ACR_IMAGE_NAME)
                 docker image push $(ACR_LATEST_IMAGE)
 
+          - task: AzureCLI@2
+            displayName: Retrieve App Insights Details
+            name: app_insights
+            inputs:
+              azureSubscription: ${{ parameters.az_subscription_sc }}
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                app_insights_instrumentation_key=$(az resource show --resource-type "microsoft.insights/components" --query properties.InstrumentationKey -g $(var_az_app_service_rg) -n $(var_app_insights))
+                app_insights_connection_string=$(az resource show --resource-type "microsoft.insights/components" --query properties.ConnectionString -g $(var_az_app_service_rg) -n $(var_app_insights))
+                echo "##vso[task.setvariable variable=APP_INSIGHTS_INSTRUMENTATION_KEY;isOutput=true]$app_insights_instrumentation_key"
+                echo "##vso[task.setvariable variable=APP_INSIGHTS_CONNECTION_STRING;isOutput=true]$app_insights_connection_string"
+
           - task: AzureWebAppContainer@1
             inputs:
               azureSubscription: ${{ parameters.az_subscription_sc }}
@@ -73,6 +86,9 @@ stages:
                 -WEBSITE_PULL_IMAGE_OVER_VNET true
                 -WEBSITES_ENABLE_APP_SERVICE_STORAGE false
                 -WEBSITES_PORT 8080
+                -APPLICATIONINSIGHTS_CONNECTION_STRING $(app_insights.APP_INSIGHTS_CONNECTION_STRING)
+                -APPINSIGHTS_INSTRUMENTATIONKEY $(app_insights.APP_INSIGHTS_INSTRUMENTATION_KEY)
+                -ApplicationInsightsAgent_EXTENSION_VERSION ~3
 
           - task: AzureAppServiceManage@0
             displayName: Start the App Service if not started properly

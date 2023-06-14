@@ -34,6 +34,20 @@ stages:
         deploy:
           steps:
 
+          - task: AzureCLI@2
+            displayName: Retrieve App Insights Details
+            name: app_insights
+            inputs:
+              azureSubscription: ${{ parameters.az_subscription_sc }}
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                app_insights_instrumentation_key=$(az resource show --resource-type "microsoft.insights/components" --query properties.InstrumentationKey -g $(var_az_app_service_rg) -n $(var_app_insights))
+                app_insights_connection_string=$(az resource show --resource-type "microsoft.insights/components" --query properties.ConnectionString -g $(var_az_app_service_rg) -n $(var_app_insights))
+                echo "##vso[task.setvariable variable=APP_INSIGHTS_INSTRUMENTATION_KEY;isOutput=true]$app_insights_instrumentation_key"
+                echo "##vso[task.setvariable variable=APP_INSIGHTS_CONNECTION_STRING;isOutput=true]$app_insights_connection_string"
+
+
           # Stopping the app service before upgrading
           - task: AzureAppServiceManage@0
             displayName: Stop the App Service
@@ -66,7 +80,20 @@ stages:
                   {
                     "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
                     "value": "true"
-                  }
+                  },
+                  # values are obtained from app_insights first task in this job.
+                  {
+                    "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                    "value": "$(app_insights.APP_INSIGHTS_INSTRUMENTATION_KEY)"
+                  },
+                  {
+                    "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                    "value": "$(app_insights.APP_INSIGHTS_CONNECTION_STRING)"
+                  },
+                  {
+                  "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                  "value": "~3" # linux
+                  },
                 ]
               # This is mandatory to set the Azure App Service Stack.
               generalSettings: |
