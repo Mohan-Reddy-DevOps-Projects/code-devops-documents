@@ -1,4 +1,4 @@
-# Purpose:
+# Purpose
 This document covers to create ADO pipeline from GitHub reporistory
 
 # Create a New pipeline
