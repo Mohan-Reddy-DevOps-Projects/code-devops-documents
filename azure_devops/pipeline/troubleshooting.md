@@ -33,3 +33,7 @@ This is used for establishing communication with Linux VM. If you want to copy f
 - Search for `SSH` and select it.
 - Fill values
 - Make sure the service connection name is in format `[username]_[hostname]`. For example: **scauser_c3duabc1**
+
+## Unauthorized to push Images to ACR
+- `Problem`: The Service Connection may not have access to push Images to ACR.
+- `Solution`: Please work with Cloud DevOps Team and request them to create the necessary permissions for the SC (Service Connection) to push Images to ACR.
