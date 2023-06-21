@@ -28,6 +28,7 @@ stages:
       ARTIFACTID: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_ARTIFACTID'] ]
       ACR_IMAGE_NAME: "$(var_acr_name).azurecr.io/$(ARTIFACTID):$(APP_VERSION)"
       ACR_LATEST_IMAGE: "$(var_acr_name).azurecr.io/$(ARTIFACTID):latest"
+
       ${{ if in(parameters.blue_green, 'False', 'false') }}:
         APP_SERVICE_SLOT: 'production'
       ${{ if in(parameters.blue_green, 'True', 'true') }}:
@@ -70,6 +71,19 @@ stages:
                 echo "##vso[task.setvariable variable=APP_INSIGHTS_INSTRUMENTATION_KEY;isOutput=true]$app_insights_instrumentation_key"
                 echo "##vso[task.setvariable variable=APP_INSIGHTS_CONNECTION_STRING;isOutput=true]$app_insights_connection_string"
 
+          # in case if your app requires secrets like db_password, we need the below task to upload secret to azure key vault
+          # if you don't need, then comment it out.
+          - task: AzureCLI@2
+            displayName: Uploads Secrets to Azure KV
+            inputs:
+              azureSubscription: ${{ parameters.az_subscription_sc }}
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # in this example, creating two secrets in azure key vaults. 
+                az keyvault secret set --name csa-op-app-datasource-password --vault-name $(var_az_keyvault) --value "$(var_az_db_password)"
+                az keyvault secret set --name csa-op-app-datasource-username --vault-name $(var_az_keyvault) --value "$(var_az_db_password)"
+
           - task: AzureWebAppContainer@1
             inputs:
               azureSubscription: ${{ parameters.az_subscription_sc }}
@@ -78,10 +92,12 @@ stages:
               deployToSlotOrASE: true
               slotName: '$(APP_SERVICE_SLOT)'
               imageName: "$(ACR_IMAGE_NAME)"
+              # if you need to pass additional environment variables to your application,
+              # you can have them here like SPRING_PROFILES_ACTIVE
               appSettings: >
-                -cqdoc_dev_app_yml_v3 "$(var_cqdoc_dev_app_yml_v3)"
                 -SPRING_PROFILES_ACTIVE $(var_spring_profiles_active)
-                -SPRING_CONFIG_LOCATION "classpath:/application.yml,classpath:/bootstrap.yml,file:/opt/app/config/application.yml"
+                -db_password "@Microsoft.KeyVault(VaultName=$(var_az_keyvault);SecretName=csa-op-app-datasource-password)"
+                -db_username "@Microsoft.KeyVault(VaultName=$(var_az_keyvault);SecretName=csa-op-app-datasource-username)"
                 -WEBSITE_HEALTHCHECK_MAXPINGFAILURES "5"
                 -WEBSITE_PULL_IMAGE_OVER_VNET true
                 -WEBSITES_ENABLE_APP_SERVICE_STORAGE false
@@ -99,19 +115,6 @@ stages:
               Action: 'Start Azure App Service' 
               SpecifySlotOrASE: true
               Slot: '$(APP_SERVICE_SLOT)'
-
-          # if blue_green is false, then app directly deploy to "production" slot
-          # hence we are stopping staging slot for saving resources.
-          - ${{ if in(parameters.blue_green, 'False', 'false') }}:
-            - task: AzureAppServiceManage@0
-              displayName: Stop the Standby Slot
-              inputs:
-                azureSubscription:  ${{ parameters.az_subscription_sc }} 
-                ResourceGroupName: $(var_az_app_service_rg)
-                WebAppName: $(var_az_app_service)
-                Action: 'Stop Azure App Service' 
-                SpecifySlotOrASE: true
-                Slot: 'staging'
 
 # in blue green model, first app is deploy to "staging" slot.  
 # If all looks good, do a LB switch to "production" slot

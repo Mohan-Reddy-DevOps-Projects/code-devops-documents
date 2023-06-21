@@ -71,19 +71,6 @@ stages:
               SpecifySlotOrASE: true
               Slot: '$(APP_SERVICE_SLOT)'
 
-          # if blue_green is false, then app directly deploy to "production" slot
-          # hence we are stopping staging slot for saving resources.
-          - ${{ if in(parameters.blue_green, 'False', 'false') }}:
-            - task: AzureAppServiceManage@0
-              displayName: Stop the Standby Slot
-              inputs:
-                azureSubscription:  ${{ parameters.az_subscription_sc }} 
-                ResourceGroupName: ${{ parameters.az_app_service_rg }}
-                WebAppName: ${{ parameters.az_app_service }}
-                Action: 'Stop Azure App Service' 
-                SpecifySlotOrASE: true
-                Slot: 'staging'
-
 
 # in blue green model, first app is deploy to "staging" slot.  
 # If all looks good, do a LB switch to "production" slot

@@ -66,7 +66,7 @@
                             <name>${project.artifactId}</name>
                             <alias>${project.artifactId}</alias>
                             <build>
-                                <from>dtr.premierinc.com/pls_org/core-dynatrace:11</from>
+                                <from>premiercommonacr.azurecr.io/jre11:latest</from>
                                 <tags>
                                     <tag>latest</tag>
                                     <tag>${project.version}</tag>

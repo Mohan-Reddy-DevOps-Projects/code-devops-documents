@@ -14,9 +14,6 @@ stages:
   parameters:
     stage_name: DEV_DEPLOY
     depends_on: ['ci']
-     # set blue_green to False if there is no approvers for the environment or 
-     # if you don't want blue_green deployment model
-    blue_green: false 
     ado_environment: 'cqdoc-provision-dev'
     az_subscription_sc: "SC_ARM_SUB_CQDOC_NP"
     deploy_variable_group: 'cqdoc-provision-dev-azure'
@@ -27,9 +24,6 @@ stages:
     depends_on: ['ci']
     # main and develop goes to QA
     condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/main', 'refs/heads/develop'))
-    # set blue_green to False if there is no approvers for the environment or 
-    # if you don't want blue_green deployment model
-    blue_green: false
     ado_environment: 'cqdoc-provision-qa'
     az_subscription_sc: "SC_ARM_SUB_CQDOC_NP"
     deploy_variable_group: 'cqdoc-provision-qa-azure'

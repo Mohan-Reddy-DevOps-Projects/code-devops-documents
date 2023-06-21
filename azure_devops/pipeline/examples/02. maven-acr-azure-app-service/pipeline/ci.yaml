@@ -1,8 +1,7 @@
 stages:
 - stage: ci
   variables:
-    - group: docker-prod-creds
-    - group: SDLC Credentials
+  - group: SDLC Credentials
   displayName: CQDOC CI 
   jobs:
   - job: set_properties
@@ -42,7 +41,7 @@ stages:
         displayName: Maven Build
         inputs:
           mavenPomFile: 'pom.xml'
-          goals: 'clean deploy -e -Ddocker.username=$(DOCKER_USERNAME) -Ddocker.password=$(DOCKER_PASSWORD)'
+          goals: 'clean deploy'
           options: '-B'
           javaHomeOption: 'Path'
           jdkDirectory: $(SYSTEM_JDK_11)
