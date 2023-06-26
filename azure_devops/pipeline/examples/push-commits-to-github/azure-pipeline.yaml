@@ -1,0 +1,30 @@
+# Make sure the trigger is none or else after each commit back to GitHub, pipeline will be triggered and it repeats in infinite loop.
+trigger: none 
+pr: none 
+
+pool: Premier Linux Agents 
+
+variables:
+- name: GITHUB_BRANCH
+  value: ${{ replace(variables['Build.SourceBranch'], 'refs/heads/', '') }}
+
+steps: 
+- checkout: self 
+  persistCredentials: true 
+
+- bash: | 
+    echo "file1" > a.txt 
+    echo "file2" > b.txt
+  displayName: Making changes to files 
+
+- bash: |
+    # To set the git config values
+    git config user.name "ADO Pipeline"
+    git config user.email "ado_agent@premierinc.com"
+
+    git add a.txt b.txt 
+    git commit -m "Build No: $(Build.BuildNumber) committed changes"
+    git push origin HEAD:$GITHUB_BRANCH
+  displayName: Push Changes to GitHub
+  env: 
+    GITHUB_BRANCH: $(GITHUB_BRANCH)
