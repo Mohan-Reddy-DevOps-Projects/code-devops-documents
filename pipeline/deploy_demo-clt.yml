@@ -1,0 +1,68 @@
+parameters:
+  - name: deploy_environment
+  - name: ado_environment
+  - name: variable_group
+  - name: ssh_connection1
+  - name: condition
+  - name: dependsOn
+    default: ['ci']
+    type: object
+
+
+stages:
+  - stage: ${{ parameters.deploy_environment }}
+    dependsOn: ${{ parameters.dependsOn }}
+    condition: ${{ parameters.condition }}
+    jobs:
+      - deployment: deploy
+        environment: ${{ parameters.ado_environment }}
+        variables:
+          - group: ${{ parameters.variable_group }}
+          - name: APP_VERSION
+            value: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_VERSION'] ]
+          - name: ARTIFACTID
+            value: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_ARTIFACTID'] ]
+          - name: GROUPID
+            value: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_GROUPID'] ]
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - bash: |
+                    wget -O $(GROUPID).tar.gz "https://code.premierinc.com/artifacts/service/rest/v1/search/assets/download?repository=public&group=$(GROUPID)&name=$(ARTIFACTID)&sort=version&maven.baseVersion=$(APP_VERSION)&maven.extension=tar.gz"
+                    tar -zxvf *.tar.gz
+                  displayName: Expand tarball
+
+                - bash: |
+                    $LIQUIBASE --log-level $(lbase_loglvl) --username "$(db_username)" --password "$(db_password)" --defaultsFile=liquibase.properties --url "$(db_url_demo_clt1)" --contexts "$(lbase_context_demo)" update
+                  displayName: Liquibase Deployment DEMO prodclt 1
+                  env:
+                    LIQUIBASE: $(SYSTEM_LIQUIBASE)
+                    db_password: "$(db_password)"
+                    PATH: /opt/app/code/automate/tools/jdk8u192-b12/bin:$(PATH)
+
+                - bash: |
+                    $LIQUIBASE --log-level $(lbase_loglvl) --username "$(db_username)" --password "$(db_password)" --defaultsFile=liquibase.properties --url "$(db_url_demo_clt2)" --contexts "$(lbase_context_demo)" update
+                  displayName: Liquibase Deployment DEMO prodclt 2
+                  env:
+                    LIQUIBASE: $(SYSTEM_LIQUIBASE)
+                    db_password: "$(db_password)"
+                    PATH: /opt/app/code/automate/tools/jdk8u192-b12/bin:$(PATH)
+
+                - task: SSH@0
+                  inputs:
+                    sshEndpoint: '${{ parameters.ssh_connection1 }}'
+                    runOptions: 'inline'
+                    inline: |
+                      set -e
+                      if [ $(demo_copy) == "true" ]
+                      then
+                        cd /opt/app/util
+                        ./pgtool.sh -u $(db_url_demo_src) -U $(db_url_demo_clt1) -e
+                         $(java_dir)java -jar $(util_dir)pgutil.jar -j $(db_url_demo_clt1) -E --action runsql -q "select exec_calc()"
+                        ./pgtool.sh -u $(db_url_demo_src) -U $(db_url_demo_clt2) -e
+                         $(java_dir)java -jar $(util_dir)pgutil.jar -j $(db_url_demo_clt2) -E --action runsql -q "select exec_calc()"
+                      fi
+                    readyTimeout: '20000'
+                  displayName: Update demo data
+

@@ -1,0 +1,65 @@
+parameters:
+  - name: variable_group
+  - name: buildParameter
+  - name: condition
+  - name: dependsOn
+    default: ['ci']
+    type: object
+
+stages:
+  - stage: build
+    displayName: Build
+    dependsOn: ${{ parameters.dependsOn }}
+    condition: and(${{ parameters.condition }}, eq('${{ parameters.buildParameter }}', 'True'))
+    jobs:
+      - job: Maven_Build
+        displayName: BUILD
+        steps:
+          - task: Maven@3
+            displayName: Maven Build
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: 'clean deploy'
+              javaHomeOption: 'path'
+              jdkDirectory: $(SYSTEM_JDK_11)
+              mavenVersionOption: 'path'
+              mavenPath: $(SYSTEM_MAVEN_3)
+
+          - bash: |
+              tar -zxvf *.tar.gz
+            displayName: script_tar_ball_creation
+            workingDirectory: target
+
+
+      - job: SecurityScans
+        dependsOn: Maven_Build
+        displayName: Security Scans
+        variables:
+          - group: 'SDLC Credentials'
+          - name: APP_VERSION
+            value: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_VERSION'] ]
+        steps:
+          - task: Maven@3
+            displayName: Maven Build
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: '-X --debug clean install com.sonatype.clm:clm-maven-plugin:index -Dclm.additionalScopes=provided'
+              options: '-B -DskipTests'
+              javaHomeOption: 'path'
+              jdkDirectory: $(SYSTEM_JDK_11)
+              mavenVersionOption: 'path'
+              mavenPath: $(SYSTEM_MAVEN_3)
+
+          - template: checkmarx-scan.yml@sdlc_templates
+            parameters:
+              CHECKMARX_PASSWORD: "$(CHECKMARX_PASSWORD)"
+              PROJECT_NAME: $(Build.Repository.Name)
+              PROJECT_VERSION: "$(APP_VERSION)"
+              TEAM: HQRD
+              SOURCE_PATH: "$(Build.SourcesDirectory)"
+
+          - template: lifecycle-scan.yml@sdlc_templates
+            parameters:
+              IQ_API_TOKEN: $(IQ_API_TOKEN)
+              ARTIFACT_VERSION: "$(APP_VERSION)"
+              DISTRIBUTION: Hosted

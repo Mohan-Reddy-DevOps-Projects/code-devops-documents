@@ -1,0 +1,51 @@
+parameters: 
+- name: deploy_environment 
+- name: ado_environment
+- name: variable_group
+- name: ssh_connection1
+- name: condition
+- name: dependsOn
+  default: ['ci']
+  type: object
+  
+
+stages: 
+- stage: ${{ parameters.deploy_environment }}
+  dependsOn: ${{ parameters.dependsOn }}
+  condition: ${{ parameters.condition }}
+  jobs:
+  - deployment: deploy
+    environment: ${{ parameters.ado_environment }}
+    variables:
+      - group: ${{ parameters.variable_group }}
+      - name: APP_VERSION
+        value: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_VERSION'] ]
+      - name: ARTIFACTID
+        value: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_ARTIFACTID'] ]
+      - name: GROUPID
+        value: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_GROUPID'] ]
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - bash: |
+                wget -O $(GROUPID).tar.gz "https://code.premierinc.com/artifacts/service/rest/v1/search/assets/download?repository=public&group=$(GROUPID)&name=$(ARTIFACTID)&sort=version&maven.baseVersion=$(APP_VERSION)&maven.extension=tar.gz"
+                tar -zxvf *.tar.gz
+              displayName: Expand tarball
+            
+            - bash: |
+                 $LIQUIBASE --log-level $(lbase_loglvl) --username "$(db_username)" --password "$(db_password)" --defaultsFile=liquibase.properties --url "$(db_url)" --contexts "$(lbase_context)" --changeLogFile $(lbase_changelogfile) update
+              displayName: Liquibase Deployment
+              env:
+                LIQUIBASE: $(SYSTEM_LIQUIBASE)
+                db_password: "$(db_password)"
+                PATH: /opt/app/code/automate/tools/jdk8u192-b12/bin:$(PATH)
+            
+            - bash: |
+                 $LIQUIBASE --log-level $(lbase_loglvl) --username "$(db_username)" --password "$(db_password)" --defaultsFile=liquibase.properties --url "$(db_url_demo)" --contexts "$(lbase_context_demo)" --changeLogFile $(lbase_changelogfile) update
+              displayName: Liquibase Deployment Demo
+              env:
+                LIQUIBASE: $(SYSTEM_LIQUIBASE)
+                db_password: "$(db_password)"
+                PATH: /opt/app/code/automate/tools/jdk8u192-b12/bin:$(PATH)
+            

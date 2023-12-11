@@ -1,0 +1,186 @@
+parameters:
+  - name: BUILD
+    type: boolean
+    default: false
+  - name: dev
+    type: boolean
+    default: false
+  - name: perf
+    type: boolean
+    default: false
+  - name: perfc2
+    type: boolean
+    default: false
+  - name: prodcul
+    type: boolean
+    default: false
+  - name: prodclt
+    type: boolean
+    default: false
+  - name: democul
+    type: boolean
+    default: false
+  - name: democlt
+    type: boolean
+    default: false
+  - name: perf1_disable_replication
+    displayName: PERF1 DISABLE REPLICATION
+    type: boolean
+    default: true
+  - name: perf1_enable_replication
+    displayName: PERF1 ENABLE REPLICATION
+    type: boolean
+    default: true
+  - name: perf2_disable_replication
+    displayName: PERF2 DISABLE REPLICATION
+    type: boolean
+    default: true
+  - name: perf2_enable_replication
+    displayName: PERF2 ENABLE REPLICATION
+    type: boolean
+    default: true
+  - name: prodcul_disable_replication
+    displayName: PRODCUL DISABLE REPLICATION
+    type: boolean
+    default: true
+  - name: prodcul_enable_replication
+    displayName: PRODCUL ENABLE REPLICATION
+    type: boolean
+    default: true
+  - name: prodclt_disable_replication
+    displayName: PRODCLT DISABLE REPLICATION
+    type: boolean
+    default: true
+  - name: prodclt_enable_replication
+    displayName: PRODCLT ENABLE REPLICATION
+    type: boolean
+    default: true
+  - name: VERSION
+    type: string
+    default: ' '
+pool:
+  name: 'Premier Linux Agents'
+  demands:
+    - SYSTEM_JDK_11
+    - SYSTEM_MAVEN_3
+
+resources:
+  repositories:
+    - repository: sdlc_templates
+      type: github
+      name: PremierInc/shield-ado-templates
+      endpoint: PremierInc
+
+variables:
+  - group: fivestar-database-build
+
+trigger:
+  - none
+
+pr:
+  branches:
+    exclude:
+      - main
+      - release*
+
+stages:
+- template: ci.yml
+  parameters:
+      run_time_version: ${{ parameters.VERSION }}
+
+- template: build.yml
+  parameters:
+    dependsOn: [ 'ci' ]
+    variable_group: 'leapfrog-database-build'
+    buildParameter: ${{ parameters.BUILD }}
+    condition: succeeded()
+
+
+- template: deploy_dev.yml
+  parameters:
+    deploy_environment: 'dev'
+    ado_environment: hqrd-fivestar-database-dev
+    dependsOn:
+      - ci
+      - build
+    variable_group: hqrd-fivestar-database-dev
+    condition: and(eq('${{ parameters.dev }}', 'true'), in(dependencies.build.result, 'Succeeded', 'Skipped', 'SucceededWithIssues'))
+    ssh_connection1: c3duhqrdapp1_hqrdappusr
+
+- template: deploy_perf.yml
+  parameters:
+    deploy_environment: 'perf'
+    ado_environment: hqrd-fivestar-database-perf
+    dependsOn:
+      - ci
+      - build
+    variable_group: hqrd-fivestar-database-perf
+    condition: and(eq('${{ parameters.perf }}', 'true'), in(dependencies.build.result, 'Succeeded', 'Skipped', 'SucceededWithIssues'))
+    perf1_disable_replication: ${{ parameters.perf1_disable_replication }}
+    perf1_enable_replication: ${{ parameters.perf1_enable_replication }}
+    ssh_connection1: c3kuhqrdapp1_hqrdappusr
+    ssh_connection2: c2puhqrdapp1_hqrdappusr
+
+- template: deploy_perf-c2.yml
+  parameters:
+    deploy_environment: 'perfc2'
+    ado_environment: hqrd-fivestar-database-perfc2
+    dependsOn:
+      - ci
+      - build
+    variable_group: hqrd-fivestar-database-perfc2
+    condition: and(eq('${{ parameters.perfc2 }}', 'true'), in(dependencies.build.result, 'Succeeded', 'Skipped', 'SucceededWithIssues'))
+    perf2_disable_replication: ${{ parameters.perf2_disable_replication }}
+    perf2_enable_replication: ${{ parameters.perf2_enable_replication }}
+    ssh_connection1: c3kuhqrdapp1_hqrdappusr
+
+- template: deploy_prod-cul.yml
+  parameters:
+     deploy_environment: 'prodcul'
+     ado_environment: hqrd-fivestar-database-prod-cul
+     dependsOn:
+       - ci
+       - build
+     variable_group: hqrd-fivestar-database-prod-cul
+     condition: and(eq('${{ parameters.prodcul }}', 'true'), in(dependencies.build.result, 'Succeeded', 'Skipped', 'SucceededWithIssues'))
+     prodcul_disable_replication: ${{ parameters.prodcul_disable_replication }}
+     prodcul_enable_replication: ${{ parameters.prodcul_enable_replication }}
+     ssh_connection1: c2puhqrdapp1_hqrdappusr
+
+- template: deploy_prod-clt.yml
+  parameters:
+    deploy_environment: 'prodclt'
+    ado_environment: hqrd-fivestar-database-prod-clt
+    dependsOn:
+      - ci
+      - build
+    variable_group: hqrd-fivestar-database-prod-clt
+    condition: and(eq('${{ parameters.prodclt }}', 'true'), in(dependencies.build.result, 'Succeeded', 'Skipped', 'SucceededWithIssues'))
+    prodclt_disable_replication: ${{ parameters.prodclt_disable_replication }}
+    prodclt_enable_replication: ${{ parameters.prodclt_enable_replication }}
+    ssh_connection1: c3puhqrdapp1_hqrdappusr
+
+- template: deploy_demo-cul.yml
+  parameters:
+    deploy_environment: 'democul'
+    ado_environment: hqrd-fivestar-database-demo-cul
+    dependsOn:
+      - ci
+      - build
+    variable_group: hqrd-fivestar-database-demo-cul
+    condition: and(eq('${{ parameters.democul }}', 'true'), in(dependencies.build.result, 'Succeeded', 'Skipped', 'SucceededWithIssues'))
+    ssh_connection1: c2puhqrdapp1_hqrdappusr
+
+
+- template: deploy_demo-clt.yml
+  parameters:
+    deploy_environment: 'democlt'
+    ado_environment: hqrd-fivestar-database-demo-clt
+    dependsOn:
+      - ci
+      - build
+    variable_group: hqrd-fivestar-database-demo-clt
+    condition: and(eq('${{ parameters.democlt }}', 'true'), in(dependencies.build.result, 'Succeeded', 'Skipped', 'SucceededWithIssues'))
+    ssh_connection1: c3puhqrdapp1_hqrdappusr
+
+

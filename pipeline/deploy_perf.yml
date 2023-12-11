@@ -1,0 +1,146 @@
+parameters:
+  - name: deploy_environment
+  - name: ado_environment
+  - name: variable_group
+  - name: ssh_connection1
+  - name: ssh_connection2
+  - name: perf1_disable_replication
+  - name: perf1_enable_replication
+  - name: condition
+  - name: dependsOn
+    default: ['ci']
+    type: object
+
+
+stages:
+  - stage: ${{ parameters.deploy_environment }}
+    dependsOn: ${{ parameters.dependsOn }}
+    condition: ${{ parameters.condition }}
+    jobs:
+      - deployment: deploy
+        environment: ${{ parameters.ado_environment }}
+        variables:
+          - group: ${{ parameters.variable_group }}
+          - name: APP_VERSION
+            value: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_VERSION'] ]
+          - name: ARTIFACTID
+            value: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_ARTIFACTID'] ]
+          - name: GROUPID
+            value: $[ stageDependencies.ci.set_properties.outputs['project_properties.PROJECT_GROUPID'] ]
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - bash: |
+                    wget -O $(GROUPID).tar.gz "https://code.premierinc.com/artifacts/service/rest/v1/search/assets/download?repository=public&group=$(GROUPID)&name=$(ARTIFACTID)&sort=version&maven.baseVersion=$(APP_VERSION)&maven.extension=tar.gz"
+                    tar -zxvf *.tar.gz
+                  displayName: Expand tarball
+
+                - task: SSH@0
+                  condition: and(succeeded(), eq('${{ parameters.perf1_disable_replication }}', 'true'))
+                  inputs:
+                    sshEndpoint: '${{ parameters.ssh_connection1 }}'
+                    runOptions: 'inline'
+                    inline: |
+                      set -e
+                      cd $(util_dir)
+                      bash ./deploy.replication.sh disable $(ms) $(util_dir) "$(java_dir)" $(db_basename) true true $(db_url_clt1) $(db_url_clt2) $(db_url_cul1) $(db_url_cul2)
+                      #demo
+                      #bash ./deploy.replication.sh disable $(ms) $(util_dir) "$(java_dir)" $(db_basename)d true true $(db_url_demo_clt1) $(db_url_demo_clt2) $(db_url_demo.cul1) $(db_url_demo.cul2)
+                    readyTimeout: '20000'
+                  displayName: Disable Replication
+                  env:
+                    perfDisable: "${{ parameters.perf1_disable_replication }}"
+
+                - bash: |
+                    $LIQUIBASE --log-level $(lbase_loglvl) --username "$(db_username)" --password "$(db_password)" --defaultsFile=liquibase.properties --url "$(db_url_cul1)" --contexts "$(lbase_context)" update
+
+                  displayName: Liquibase Deployment C3 1
+                  env:
+                    LIQUIBASE: $(SYSTEM_LIQUIBASE)
+                    db_password: "$(db_password)"
+                    PATH: /opt/app/code/automate/tools/jdk8u192-b12/bin:$(PATH)
+
+                - bash: |
+                    $LIQUIBASE --log-level $(lbase_loglvl) --username "$(db_username)" --password "$(db_password)" --defaultsFile=liquibase.properties --url "$(db_url_cul2)" --contexts "$(lbase_context)" update
+                  displayName: Liquibase Deployment C3 2
+                  env:
+                    LIQUIBASE: $(SYSTEM_LIQUIBASE)
+                    db_password: "$(db_password)"
+                    PATH: /opt/app/code/automate/tools/jdk8u192-b12/bin:$(PATH)
+
+                - bash: |
+                    $LIQUIBASE --log-level $(lbase_loglvl) --username "$(db_username)" --password "$(db_password)" --defaultsFile=liquibase.properties --url "$(db_url_demo_cul1)" --contexts "$(lbase_context_demo)" update
+                  displayName: Liquibase Deployment DEMO C3 1
+                  env:
+                    LIQUIBASE: $(SYSTEM_LIQUIBASE)
+                    db_password: "$(db_password)"
+                    PATH: /opt/app/code/automate/tools/jdk8u192-b12/bin:$(PATH)
+
+                - bash: |
+                    $LIQUIBASE --log-level $(lbase_loglvl) --username "$(db_username)" --password "$(db_password)" --defaultsFile=liquibase.properties --url "$(db_url_demo_cul2)" --contexts "$(lbase_context_demo)" update
+                  displayName: Liquibase Deployment DEMO C3 2
+                  env:
+                    LIQUIBASE: $(SYSTEM_LIQUIBASE)
+                    db_password: "$(db_password)"
+                    PATH: /opt/app/code/automate/tools/jdk8u192-b12/bin:$(PATH)
+
+                - task: SSH@0
+                  condition: and(succeeded(), eq('${{ parameters.perf1_enable_replication }}', 'true'))
+                  inputs:
+                    sshEndpoint: '${{ parameters.ssh_connection1 }}'
+                    runOptions: 'inline'
+                    inline: |
+                      set -e
+                      cd $(util_dir)
+                      bash ./deploy.replication.sh enable $(ms) $(util_dir) "$(java_dir)" $(db_basename) true true $(db_url_clt1) $(db_url_clt2) $(db_url_cul1) $(db_url_cul2)
+                      #demo
+                      #bash ./deploy.replication.sh enable $(ms) $(util_dir) "$(java_dir)" $(db_basename) true true $(db_url_clt1) $(db_url_clt2) $(db_url_demo.cul1) $(db_url_demo.cul2)
+                    readyTimeout: '20000'
+                  displayName: Enable Replication
+                  env:
+                    perfDisable: "${{ parameters.perf1_enable_replication }}"
+
+                - task: SSH@0
+                  inputs:
+                    sshEndpoint: '${{ parameters.ssh_connection2 }}'
+                    runOptions: 'inline'
+                    inline: |
+                      set -e
+                      if [ $(demo_copy) == "true" ]
+                      then
+                        cd /opt/app/util
+                        ./pgtool.sh -u $(db_url_demo_src) -U $(db_url_demo_cul1) -e
+                        $(java_dir)java -jar $(util_dir)pgutil.jar -j $(db_url_demo_cul1) -E --action runsql -q "select mask_demo_fnc(null,null)"
+                      fi
+                    readyTimeout: '20000'
+                  displayName: Update demo data
+
+                - task: SSH@0
+                  inputs:
+                    sshEndpoint: '${{ parameters.ssh_connection1 }}'
+                    runOptions: 'inline'
+                    inline: |
+                      #!/usr/bin/sh
+                      if [ "$(1_do_validation)" == "true" ]
+                      then
+                        cd $(util_dir)
+                      #echo "check 0:"
+                      #java -jar /opt/app/util/pgutil.jar -j ${db_url_cul1} -E -a runsql -q "select count(*) from fct_msr;" -w /opt/app/util/ -s /opt/app/util/
+                      #java -jar /opt/app/util/pgutil.jar -j ${db_url_cul1} -E -a runsql -q "select * from adm.pg_stat_replication_v where application_name like 'fivestar%';" -w /opt/app/util/ -s /opt/app/util/
+                        bash ./deploy.validation.sh $(ms) $(util_dir) "$(java_dir)" $(db_url_cul1) $(db_url_cul2) $(db_url_cul1) $(val_slptm) $(val_typ) $(tbls)
+                      #sleep 5
+                      #echo "check 1:"
+                      #java -jar /opt/app/util/pgutil.jar -j ${db_url_cul1} -E -a runsql -q "select count(*) from fct_msr;" -w /opt/app/util/ -s /opt/app/util/
+                      #java -jar /opt/app/util/pgutil.jar -j ${db_url_cul1} -E -a runsql -q "select * from adm.pg_stat_replication_v where application_name like 'fivestar%';" -w /opt/app/util/ -s /opt/app/util/
+                      #sleep 10
+                      #echo "check 2:"
+                      #java -jar /opt/app/util/pgutil.jar -j ${db_url_cul1} -E -a runsql -q "select count(*) from fct_msr;" -w /opt/app/util/ -s /opt/app/util/
+                      #java -jar /opt/app/util/pgutil.jar -j ${db_url_cul1} -E -a runsql -q "select * from adm.pg_stat_replication_v where application_name like 'fivestar%';" -w /opt/app/util/ -s /opt/app/util/
+                      #sleep 20
+                      #echo "check 3:"
+                      #java -jar /opt/app/util/pgutil.jar -j ${db_url_cul1} -E -a runsql -q "select count(*) from fct_msr;" -w /opt/app/util/ -s /opt/app/util/
+                      #java -jar /opt/app/util/pgutil.jar -j ${db_url_cul1} -E -a runsql -q "select * from adm.pg_stat_replication_v where application_name like 'fivestar%';" -w /opt/app/util/ -s /opt/app/util/
+                      fi
+                    readyTimeout: '20000'
+                  displayName: Validate Replication

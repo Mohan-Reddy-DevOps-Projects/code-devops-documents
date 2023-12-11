@@ -1,0 +1,36 @@
+parameters:
+  - name: run_time_version
+
+stages:
+  - stage: ci
+    displayName: FIVESTAR Database CI
+    jobs:
+      - job: set_properties
+        displayName: Set Properties
+        steps:
+          - bash: |
+              groupId=$($MAVEN help:evaluate -Dexpression="project.groupId" -q -DforceStdout)
+              artifactId=$($MAVEN help:evaluate -Dexpression="project.artifactId" -q -DforceStdout)
+              
+              if [ "${{ parameters.run_time_version }}" = " " ]; then
+              echo "#### GETTING FROM MAVEN ####"
+              version=$($MAVEN help:evaluate -Dexpression="project.version" -q -DforceStdout)
+              else
+              echo "#### GETTING FROM RUNTIME ####"
+              version="${{ parameters.run_time_version }}"
+              fi
+              
+              echo "##vso[task.setvariable variable=PROJECT_VERSION;isOutput=true]$version"
+              echo "##vso[task.setvariable variable=PROJECT_ARTIFACTID;isOutput=true]$artifactId"
+              echo "##vso[task.setvariable variable=PROJECT_GROUPID;isOutput=true]$groupId"
+            name: project_properties
+            displayName: Set Project Properties
+            env:
+              MAVEN: $(SYSTEM_MAVEN_3)
+              JAVA_HOME: $(SYSTEM_JDK_11)
+          - bash: |
+              set -eu
+              echo "Project Version: $(project_properties.PROJECT_VERSION)"
+              echo "Project Artifact ID: $(project_properties.PROJECT_ARTIFACTID)"
+              echo "Project Group ID: $(project_properties.PROJECT_GROUPID)"
+            displayName: Display Project Properties
